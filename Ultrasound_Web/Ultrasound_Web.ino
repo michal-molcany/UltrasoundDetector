@@ -2,12 +2,14 @@
 #include <WiFiClient.h>
 #include <ESP8266WebServer.h>
 #include <ESP8266mDNS.h>
+#include <EEPROM.h>
 
 const char* ssid = "ERNI_WPA2-PSK";
 const char* password = "E4R5N9I9-w2p0a12X";
 const int refreshTime = 3000;
-const int triggeringDistance = 50;
+
 const byte arrayLenght = 6;
+const int EEPROMaddress = 0;
 
 ESP8266WebServer server(80);
 
@@ -17,6 +19,7 @@ bool motion = false;
 #define echoPin D7 // Echo Pin
 #define trigPin D6 // Trigger Pin
 int previous = 0;
+byte triggeringDistance = 50;
 
 bool valuesArray[arrayLenght];
 byte arrayIndex = 0;
@@ -62,6 +65,10 @@ void handleData()
 {
   server.send(200, "text/html", String(getFilterdData()));
 }
+void handleUpdate()
+{
+  server.send(200, "text/html", "Not implemented.");
+}
 
 void handleNotFound() {
   String message = "File Not Found\n\n";
@@ -83,6 +90,13 @@ void setup(void) {
   pinMode(echoPin, INPUT);
   pinMode(ledPin, OUTPUT);      // declare LED as output
   Serial.begin(9600);
+  EEPROM.begin(512);
+  byte value = EEPROM.read(EEPROMaddress);
+  if (value != 0)
+  {
+    triggeringDistance = value;
+  }
+
   WiFi.begin(ssid, password);
   Serial.println("");
   int i = 0;
@@ -102,11 +116,15 @@ void setup(void) {
 
   if (MDNS.begin("esp8266")) {
     Serial.println("MDNS responder started");
+
+
   }
 
   server.on("/", handleRoot);
 
   server.on("/data", handleData);
+
+//  server.on("/update" handleUpdate);
 
   server.onNotFound(handleNotFound);
 
