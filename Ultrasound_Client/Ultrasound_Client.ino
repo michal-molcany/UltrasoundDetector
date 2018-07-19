@@ -39,7 +39,7 @@ void loop() {
   if ((WiFiMulti.run() == WL_CONNECTED)) {
 
     HTTPClient http;
-    http.begin("http://10.201.92.51/data"); //HTTP
+    http.begin("http://10.201.92.39/data"); //HTTP
     int httpCode = http.GET();
 
     // httpCode will be negative on error
