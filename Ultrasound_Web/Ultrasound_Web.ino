@@ -4,8 +4,10 @@
 #include <ESP8266mDNS.h>
 #include <EEPROM.h>
 
-const char* ssid = "ERNI_WPA2-PSK";
-const char* password = "E4R5N9I9-w2p0a12X";
+#include <DNSServer.h>
+#include "WiFiManager.h"          //https://github.com/tzapu/WiFiManager
+
+
 const int refreshTime = 3000;
 
 const byte arrayLenght = 6;
@@ -67,7 +69,7 @@ void handleData()
 }
 void handleUpdate()
 {
-  server.send(200, "text/html", "Not implemented.");
+  server.send(200, "text/html", "<form method='POST' action='/update' enctype='multipart/form-data'><input type='file' name='update'><input type='submit' value='Update'></form>");
 }
 
 void handleNotFound() {
@@ -85,6 +87,13 @@ void handleNotFound() {
   server.send(404, "text/plain", message);
 }
 
+
+void configModeCallback (WiFiManager *myWiFiManager) {
+  Serial.println("Entered config mode");
+  Serial.println(WiFi.softAPIP());
+  Serial.println(myWiFiManager->getConfigPortalSSID());
+}
+
 void setup(void) {
   pinMode(trigPin, OUTPUT);
   pinMode(echoPin, INPUT);
@@ -97,20 +106,18 @@ void setup(void) {
     triggeringDistance = value;
   }
 
-  WiFi.begin(ssid, password);
-  Serial.println("");
-  int i = 0;
-  // Wait for connection
-  while (WiFi.status() != WL_CONNECTED) {
-    delay(500);
-    Serial.print(".");
-    i++;
-    if (i > 15)
-      return;
+  WiFiManager wifiManager;
+  wifiManager.setAPCallback(configModeCallback);
+
+  if (!wifiManager.autoConnect()) {
+    Serial.println("failed to connect and hit timeout");
+    ESP.reset();
+    delay(1000);
   }
+
   Serial.println("");
   Serial.print("Connected to ");
-  Serial.println(ssid);
+  Serial.println(WiFi.SSID());
   Serial.print("IP address: ");
   Serial.println(WiFi.localIP());
 
@@ -124,7 +131,7 @@ void setup(void) {
 
   server.on("/data", handleData);
 
-//  server.on("/update" handleUpdate);
+  server.on("/update", HTTP_POST, handleUpdate);
 
   server.onNotFound(handleNotFound);
 
