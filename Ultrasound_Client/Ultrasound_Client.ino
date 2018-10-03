@@ -5,16 +5,24 @@
 
 #include <ESP8266HTTPClient.h>
 
+#include <ESP8266WebServer.h>
+#include <DNSServer.h>
+#include "WiFiManager.h"
+
+
 #define occupiedPin D7
 #define freePin D6
-
-const char* ssid = "ERNI_WPA2-PSK";
-const char* password = "E4R5N9I9-w2p0a12X";
 
 bool failed = false;
 
 
 ESP8266WiFiMulti WiFiMulti;
+
+void configModeCallback (WiFiManager *myWiFiManager) {
+  Serial.println("Entered config mode");
+  Serial.println(WiFi.softAPIP());
+  Serial.println(myWiFiManager->getConfigPortalSSID());
+}
 
 void setup() {
   pinMode(occupiedPin, OUTPUT);
@@ -29,7 +37,15 @@ void setup() {
     delay(1000);
   }
 
-  WiFiMulti.addAP(ssid, password);
+ WiFiManager wifiManager;
+  wifiManager.setAPCallback(configModeCallback);
+
+  if (!wifiManager.autoConnect()) {
+    Serial.println("failed to connect and hit timeout");
+    ESP.reset();
+    delay(1000);
+  }
+  
   digitalWrite(occupiedPin, LOW);
   digitalWrite(freePin, LOW);
 }
